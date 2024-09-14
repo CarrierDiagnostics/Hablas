@@ -8,7 +8,7 @@ export default function Home() {
     <>
       <Stack.Screen options={{ title: 'Home' }} />
       <Container>
-        <Text>Olivia what should the UI look like here?</Text>
+        <Text>I dont know!</Text>
         <ScreenContent path="app/(drawer)/index.tsx" title="Home" />
       </Container>
     </>
