@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "react-native-epub-parser": "^0.1.0"
+  }
+}
