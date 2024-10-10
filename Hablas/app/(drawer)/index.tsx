@@ -3,7 +3,7 @@ import { Stack } from 'expo-router';
 import { View, Text, ScrollView } from 'react-native';
 import { Container } from '~/components/Container';
 import { ScreenContent } from '~/components/ScreenContent';
-import EPub from 'react-native-epub-parser';
+import * as epubjs from 'epubjs';
 
 export default function Home() {
   const [epubContent, setEpubContent] = useState('');
@@ -11,15 +11,19 @@ export default function Home() {
   useEffect(() => {
     const loadEpub = async () => {
       try {
-        // Use require to reference the EPUB in the assets folder
-        const epubPath = require('../../assets/book.epub');
-        const book = new EPub(epubPath);
-        await book.parse();
+        // Load the EPUB file
+        const response = await fetch('/assets/book.epub');
+        const arrayBuffer = await response.arrayBuffer();
         
+        // Create a new Book
+        const book = epubjs.Book(arrayBuffer);
+        
+        // Generate the content
         let content = '';
-        for (let i = 1; i <= book.spine.length; i++) {
-          const chapter = await book.getChapter(i);
-          content += chapter.htmlContent;
+        const spine = await book.loaded.spine;
+        for (let item of spine.items) {
+          const chapter = await item.load();
+          content += chapter.document.body.innerHTML;
         }
         
         setEpubContent(content);
