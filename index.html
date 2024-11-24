@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang=""en">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+<script src="epubObj.js" type="module"></script> <!-- EpubTocExtractor class -->
 <style>
     body {
         margin: 20px;
@@ -22,8 +24,11 @@
     <h1>Hablas Trial</h1>
     <div id="input_sentence"> Read this sentence please </div>
     <div id="return_sentence"> this is what you said </div>
+     <!-- EpubTocExtractor file -->
     <input type="file" id="fileInput" accept=".epub"/> 
+
     <div id="viewer">epub Viewer</div>
+    <div id="futureEpub">future ePub</div>
 
     
     <button id="recordButton">Record</button>
@@ -41,6 +46,8 @@
         const returnSentence = document.getElementById('return_sentence');
         const fileInput = document.getElementById('fileInput');
         const viewer = document.getElementById('viewer');
+        const futureEpub= document.getElementById('futureEpub'); 
+       
 
         let mediaRecorder; 
         let audioChunks = []; //buffer
@@ -94,13 +101,22 @@
                 console.log(event) 
             const file = event.target.files[0]; //event is an object (change event triggered when the user selects a file). target=property of the object event. refers to the element that triggered the event
             console.log(file);
-            if (file) {
+            if (file) { //will not be displayed, is what was being previously used
                 const book = ePub(file);
                 const rendition = book.renderTo("viewer", { //method to render the book in the specified viewer div
                     width: "100%", //width of the rendered content to 100% of the width of the viewer element.
-                    height: "100%"
+                    height: "100%",
+                    
                 });
                 rendition.display();
+            }
+            if (file){
+                document.getElementById('fileInput').addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                let newDiv = await displayToc(file); //await bc we dont know how long this task will take and we dont want our program to freeze
+                console.log("the newDiv has been created");
+                futureEpub.appendChild(newDiv)}); //you treat the div as a list.
+                console.log("the ePub has been appended");
             }
             } else {
                 console.log("event is null");
