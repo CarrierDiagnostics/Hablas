@@ -3,7 +3,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
-<script src="epubObj.js" type="module"></script> <!-- EpubTocExtractor class -->
 <style>
     body {
         margin: 20px;
@@ -27,227 +26,100 @@
      <!-- EpubTocExtractor file -->
     <input type="file" id="fileInput" accept=".epub"/> 
 
-    <div id="viewer">epub Viewer</div>
-    <div id="futureEpub">future ePub</div>
+    <div id="viewer"></div>
 
     
-    <button id="recordButton">Record</button>
-    <button id="stopButton">Stop</button>
-    
-    <label for="mySelect">Choose a language option:</label>
-    <select id="mySelect" name="options">
-        <option value="option1">Spanish</option>
-        <option value="option2">English</option>
-        <option value="option3">French</option>
-    </select>
-    <script>
-        const recordButton = document.getElementById('recordButton');
-        const stopButton = document.getElementById('stopButton');
-        const returnSentence = document.getElementById('return_sentence');
-        const fileInput = document.getElementById('fileInput');
-        const viewer = document.getElementById('viewer');
-        const futureEpub= document.getElementById('futureEpub'); 
-       
+<div id="navigation">
+    <button id="prev">Previous</button>
+    <button id="next">Next</button>
+</div>
 
-        let mediaRecorder; 
-        let audioChunks = []; //buffer
+<script>
+    const fileInput = document.getElementById('fileInput');
+    let currentBook = null;
 
-        const socket = new WebSocket('ws://localhost:8765'); //built-in object. url of our socket (its local in this case)
-
-        // WebSocket event handlers
-        socket.addEventListener('open', () => {
-            console.log('WebSocket connection established'); //a use could be connect it to enable/not the record button
-        });
-
-        socket.addEventListener('message', (event) => {
-            console.log('Message from server:', event.data);
-            returnSentence.textContent = event.data; // Display message from server. ex: "an audio has been received"
-        });
-
-        socket.addEventListener('close', () => {
-            console.log('WebSocket connection closed');
-        });
-
-        socket.addEventListener('error', (error) => {
-            console.error('WebSocket error:', error);
-        });
-
-        recordButton.addEventListener('click', async () => { //standarised procedure 
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); //built-in function of mozilla to get the media of the user
-            mediaRecorder = new MediaRecorder(stream); //object pre-built
-
-            mediaRecorder.ondataavailable = event => { //event = the object has changed in some way. every ms that you talk and it gets saved in the array
-                audioChunks.push(event.data);  //saving the audio into an array
-            };
-
-            mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' }); //standarised object to store the mide. wav is binary
-                audioChunks = []; 
-                socket.send(audioBlob);
-            };
-
-            mediaRecorder.start();
-            //socket.send(JSON.stringify({ event: 'start' })); // Notify server that recording has started
-        });
-
-        stopButton.addEventListener('click', () => {
-            mediaRecorder.stop();
-            //socket.send(JSON.stringify({ event: 'stop' })); // Notify server that recording has stopped
-        });
-
-        fileInput.addEventListener('change', async (event) => {
-            if (event) {
-                const file = event.target.files[0];
-                if (file) {
-                    try {
-                        const extractor = new EpubTocExtractor();
-                        const toc = await extractor.extractToc(file);
-                        const zip = await JSZip.loadAsync(file);  // Load ZIP once
-                        
-                        const tocHtml = toc.map(item => `
-                            <div>
-                                <a href="#" data-href="${item.href}" class="toc-link">${item.label}</a>
-                            </div>
-                        `).join('');
-                        
-                        futureEpub.innerHTML = tocHtml;
-                        
-                        // Add click handlers to all TOC links
-                        document.querySelectorAll('.toc-link').forEach(link => {
-                            link.addEventListener('click', async (e) => {
-                                e.preventDefault();
-                                const href = e.target.dataset.href.split('#')[0];
-                                try {
-                                    // Try different common EPUB paths
-                                    let content;
-                                    let zipFile = zip.file(`OEBPS/${href}`);
-                                    if (!zipFile) zipFile = zip.file(href);
-                                    if (!zipFile) zipFile = zip.file(`OPS/${href}`);
-                                    
-                                    if (!zipFile) {
-                                        console.error('Could not find file in EPUB:', href);
-                                        // List all files in ZIP for debugging
-                                        console.log('Available files:', Object.keys(zip.files));
-                                        return;
-                                    }
-                                    
-                                    content = await zipFile.async('string');
-                                    const parser = new DOMParser();
-                                    const doc = parser.parseFromString(content, 'text/html');
-                                    viewer.textContent = doc.body.textContent;
-                                } catch (error) {
-                                    console.error('Error loading chapter:', error);
-                                }
-                            });
-                        });
-
-                        // Original rendering code...
-                        const book = ePub(file);
-                        const rendition = book.renderTo("viewer", {
-                            width: "100%",
-                            height: "100%",
-                            allowScriptedContent: true,
-                            spread: "none",
-                            script: true,
-                            sandbox: "allow-same-origin allow-scripts allow-popups"
-                        });
-                        rendition.hooks.content.register(function(contents) {
-                            contents.addScript("allow-scripts");
-                        });
-                        rendition.display();
-                    } catch (error) {
-                        console.error('Error processing EPUB:', error);
-                    }
-                }
-            }
-        });
-
-    async function displayToc(epubFile) {
-        try {
-            const extractor = new EpubTocExtractor();
-            const toc = await extractor.extractToc(epubFile);
-            console.log("displayToc async function")
-            const renderTocItem = (item, level = 0) => {
-                const div = document.createElement('div');
-                div.style.paddingLeft = `${level * 20}px`;
-                
-                const link = document.createElement('a');
-                link.href = item.href;
-                link.textContent = item.label;
-                div.appendChild(link);
-                
-                item.children.forEach(child => {
-                    div.appendChild(renderTocItem(child, level + 1));
-                });
-                
-                return div;
-            };
+    fileInput.addEventListener('change', async (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            currentBook = ePub(file);
             
-            const tocContainer = document.createElement('div');
-            tocContainer.className = 'toc-container';
-            toc.forEach(item => {
-                tocContainer.appendChild(renderTocItem(item));
+            const rendition = currentBook.renderTo("viewer", {
+                width: "100%",
+                height: "600px",
+                spread: "none",
+                allowScriptedContent: true,
+                script: true,
+                sandbox: "allow-same-origin allow-scripts allow-popups",
+                spread: "none"
             });
-            
-            return tocContainer
 
-        } catch (error) {
-            console.error('Error extracting TOC:', error);
-        }
-    }
+            // Add the makeRangeCfi function
+            const makeRangeCfi = (a, b) => {
+                const CFI = new ePub.CFI()
+                const start = CFI.parse(a), end = CFI.parse(b)
+                const cfi = {
+                    range: true,
+                    base: start.base,
+                    path: {
+                        steps: [],
+                        terminal: null
+                    },
+                    start: start.path,
+                    end: end.path
+                }
+                const len = cfi.start.steps.length
+                for (let i = 0; i < len; i++) {
+                    if (CFI.equalStep(cfi.start.steps[i], cfi.end.steps[i])) {
+                        if (i == len - 1) {
+                            if (cfi.start.terminal === cfi.end.terminal) {
+                                cfi.path.steps.push(cfi.start.steps[i])
+                                cfi.range = false
+                            }
+                        } else cfi.path.steps.push(cfi.start.steps[i])
+                    } else break
+                }
+                cfi.start.steps = cfi.start.steps.slice(cfi.path.steps.length)
+                cfi.end.steps = cfi.end.steps.slice(cfi.path.steps.length)
 
-    class EpubTocExtractor {
-        constructor() {
-            this.zip = null;
-        }
+                return 'epubcfi(' + CFI.segmentString(cfi.base)
+                    + '!' + CFI.segmentString(cfi.path)
+                    + ',' + CFI.segmentString(cfi.start)
+                    + ',' + CFI.segmentString(cfi.end)
+                    + ')'
+            }
 
-        async extractToc(epubFile) {
-            // Load the EPUB file as a ZIP
-            this.zip = await JSZip.loadAsync(epubFile);
-            
-            // Get toc.ncx content
-            const tocContent = await this.zip.file("OEBPS/toc.ncx").async('text');
-            console.log(tocContent);
-            return this.parseNcxDocument(tocContent);
-        }
-
-        parseNcxDocument(ncxContent) {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(ncxContent, 'text/xml');
-            
-            const extractItems = (navPoints) => {
-                const items = [];
-                
-                navPoints.forEach(navPoint => {
-                    const labelEl = navPoint.querySelector('navLabel text');
-                    const contentEl = navPoint.querySelector('content');
+            // Function to extract visible text
+            const extractVisibleText = () => {
+                const location = rendition.currentLocation();
+                console.log(location);
+                if (location && location.start && location.end) {
+                    const [a, b] = [location.start.cfi, location.end.cfi];
+                    const rangeCfi = makeRangeCfi(a, b);
                     
-                    if (labelEl && contentEl) {
-                        const item = {
-                            label: labelEl.textContent.trim(),
-                            href: contentEl.getAttribute('src'),
-                            children: []
-                        };
-                        
-                        const nestedNavPoints = navPoint.querySelectorAll(':scope > navPoint');
-                        if (nestedNavPoints.length > 0) {
-                            item.children = extractItems(Array.from(nestedNavPoints));
-                        }
-                        
-                        items.push(item);
-                    }
-                });
-                return items;
+                    currentBook.getRange(rangeCfi)
+                        .then(range => {
+                            console.log('Current page text:', range.toString());
+                        })
+                        .catch(error => {
+                            console.error('Error getting range:', error);
+                        });
+                }
             };
 
-            const navPoints = Array.from(doc.querySelectorAll('navMap > navPoint'));
-            return extractItems(navPoints);
+            // Initial render
+            rendition.on('rendered', extractVisibleText);
+
+            // Navigation
+            document.getElementById('prev').addEventListener('click', () => {
+                rendition.prev().then(extractVisibleText);
+            });
+
+            document.getElementById('next').addEventListener('click', () => {
+                rendition.next().then(extractVisibleText);
+            });
+
+            rendition.display();
         }
-    }
-
-    
-    </script>
-</body>
-
-</html>
+    });
+</script>
 
