@@ -18,6 +18,13 @@
         border: 1px solid #ccc;
         overflow: auto;
     }
+
+    #record {
+        margin-top: 10px;
+        padding: 5px; /*changes size of the button*/
+        display: block;
+        flex:1;
+    }
     .modal {
         display: none;
         position: fixed;
@@ -28,6 +35,13 @@
         background-color: rgba(0,0,0,0.4);
     }
     .modal-content {
+        position: relative; /* Makes this element a positioning context for its children
+        Any child with position: absolute will be positioned relative to this element
+        Like creating a coordinate system inside this element */
+        height: 400px;
+        display: flex;
+        flex-direction: column;
+        /* Makes flex items stack vertically instead of horizontally*/
         background-color: #fefefe;
         margin: 15% auto;
         padding: 20px;
@@ -37,6 +51,28 @@
     .close {
         float: right;
         cursor: pointer;
+    }
+    .arrow-container {
+        /*is position: absolute; */
+        flex:1; 
+        bottom: 20px; /* 20px from bottom of modal-content (parent) */
+        left: 0;
+        right: 0;
+        display: flex; /* Makes items inside lay out horizontally */
+        justify-content: center;
+        gap: 10px; /*adds 10 px of space between the arrows*/
+        padding: 10px;
+        background-color: white;
+    }
+    .arrowPrev, .arrowNext {
+        cursor: pointer;    /* Changes mouse cursor to a hand when hovering */
+        padding: 5px 10px;  /* Adds space inside each arrow (5px top/bottom, 10px left/right) */
+    }
+    .text-container {
+        flex: 9; /* Takes up all available space in the flex container */
+        overflow-y: auto; /* Adds vertical scroll when content is too tall */
+        padding: 20px;
+        margin-bottom: 60px;
     }
 </style>
 <body>
@@ -49,10 +85,20 @@
     <div id="viewer"></div>
 
     <div id="myModal" class="modal"> 
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <p>Modal paragraph</p>
-            <div id="selectedText"></div>
+        <div class="modal-content"> 
+            <span class="close">&times;</span> 
+            <div class="text-container">
+                <p>Selected text will appear here</p>
+                <div id="selectedText"></div>
+            </div>
+            <button id="record">record Button</button>
+            <div class="arrow-container">
+                <span class="arrowPrev">Prev</span>
+                <span class="arrowNext">Next</span>
+            </div>
+            
+            
+            
         </div>
 
     </div>
@@ -62,31 +108,78 @@
     <button id="prev">Previous</button>
     <button id="next">Next</button>
     <button id="select">Select this paragraph</button>
+    
 </div>
 
 <script>
     const fileInput = document.getElementById('fileInput');
     let currentBook = null;
+    let rendition = null;
+    let selectedText = null;
+    let lines = null; 
+    let lineNum = 0;
 
-    const modal = document.getElementById('myModal');
+    const modalDiv = document.getElementById('myModal');
     const closeBtn = document.getElementsByClassName('close')[0];
     const selectBtn = document.getElementById('select');
+    const selectDiv = document.getElementById('selectedText');
+    const prevBtn = document.getElementsByClassName('arrowPrev')[0];
+    const nextBtn = document.getElementsByClassName('arrowNext')[0];
     
+    const recordBtn = document.getElementById('record'); 
+    
+    
+
+    const abbreviations = [
+        'Mr.', 'Mrs.', 'Ms.', 'Dr.', 'Prof.',
+        'Sr.', 'Jr.', 'etc.', 'e.g.', 'i.e.', '."'
+    ];
+    console.log(abbreviations)
+    prevBtn.addEventListener('click', () => {
+            if (lineNum <= 0) {
+                // Do nothing when at the start
+            } else {
+                lineNum--;
+                selectDiv.innerHTML = lines[lineNum];
+            }
+        });
+
+        nextBtn.addEventListener('click',() => {
+            console.log(`clicked on nextBtn. line number: ${lineNum}`);
+            if (lineNum == lines.length-1) {
+            
+            } else {
+                lineNum++;
+                selectDiv.innerHTML=lines[lineNum];
+            }
+            
+        })
+
     selectBtn.addEventListener('click', () => {
-        modal.style.display = "block"; 
-        // Here you can add the selected text to the modal
-        document.getElementById('selectedText').textContent = "Your selected text";
+        if (!rendition) { 
+            alert('Please load an EPUB file first');
+            return;
+        }
+        
+        modalDiv.style.display = "block"; //
+        //selectDiv.innerHTML=selectedText;
+        console.log(selectDiv);
+        console.log(lines);
+        console.log(lineNum);
+        selectDiv.innerHTML=lines[lineNum];
+
     });
 
     closeBtn.addEventListener('click', (event) => {
-        modal.style.display = "none"; 
+        modalDiv.style.display = "none"; 
+        lineNum=0;
 
     });
 
     // Close modal when clicking outside
     window.addEventListener('click',(event)=> {
-        if (event.target==modal) {
-            modal.style.display = "none";
+        if (event.target==modalDiv) {
+            modalDiv.style.display = "none";
         }
     });
 
@@ -95,7 +188,7 @@
         if (file) {
             currentBook = ePub(file);
             
-            const rendition = currentBook.renderTo("viewer", {
+            rendition = currentBook.renderTo("viewer", {
                 width: "100%",
                 height: "600px",
                 spread: "none",
@@ -148,14 +241,26 @@
                     const [a, b] = [location.start.cfi, location.end.cfi];
                     const rangeCfi = makeRangeCfi(a, b);
                     
-                    currentBook.getRange(rangeCfi)
-                        .then(range => {
+                    currentBook.getRange(rangeCfi) //the return of this function is a var called range which has our text
+                        .then(range => { //function that is returning range
                             console.log('Current page text:', range.toString());
+                            selectedText=range.toString();
+                            const  regexMatch =  /[A-Z]\./g
+                            selectedText = selectedText.replace(regexMatch, (match) => match.replace('.', ''));
+                            for (let i = 0; i < abbreviations.length; i++) {
+                                let abbr = abbreviations[i].replaceAll(".", "");
+                                selectedText = selectedText.replaceAll(abbreviations[i], abbr);
+                            }
+
+                            lines = selectedText.split('.') ; //its returned already because its a global var
+                            console.log(lines);
+                            
                         })
                         .catch(error => {
                             console.error('Error getting range:', error);
                         });
                 }
+
             };
 
             // Initial render
