@@ -13,7 +13,10 @@ def highlight_differences(predicted, sentence):
     wc_sentence = len(words_sentence)
     max_length = max (wc_pred, wc_sentence) #predicted is what the AI generated
 
-    print(words_pred)
+    print(f"words_pred: {words_pred}, and the n of words: {wc_pred}")
+    print(f"words_sentence: {words_sentence}, and the n of words: {wc_sentence}")
+    
+    print(f"max length: {max_length} ")
     for i in range (max_length):
         if (words_pred[i]==words_sentence[i]):
             print(f"ok word: {i}") #clean
@@ -22,7 +25,9 @@ def highlight_differences(predicted, sentence):
             print(f"word: {i} is not ok")
             words_pred[i] = f'<span id="wrong">{words_pred[i]}</span>'
             print(words_pred[i]) #clean
-
+        if (i==max_length):
+            print("we're at the end of the loop")
+    print("finished the for loop")
 
     words_pred=" ".join(words_pred)
     return words_pred
