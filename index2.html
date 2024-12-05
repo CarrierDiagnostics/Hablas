@@ -1,0 +1,67 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Text Comparison Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .report-header {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        .similarity-score {
+            color: {'green' if comparison_result['similarity_score'] > 80 else 'red'};
+            font-weight: bold;
+        }
+        .original-text, .compared-text {
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .difference {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-left: 5px solid;
+        }
+        .replace { border-color: orange; background-color: #fff3cd; }
+        .delete { border-color: red; background-color: #f8d7da; }
+        .insert { border-color: green; background-color: #d4edda; }
+    </style>
+</head>
+<body>
+    <div class="report-header">
+        <h1>Text Comparison Report</h1>
+    </div>
+    
+    <h2>Comparison Metrics</h2>
+    <p>Similarity Score: <span class="similarity-score">{comparison_result['similarity_score']}%</span></p>
+    <p>Original Text Length: {comparison_result['total_length_original']} characters</p>
+    <p>Compared Text Length: {comparison_result['total_length_compared']} characters</p>
+    
+    <h2>Original Text</h2>
+    <div class="original-text">{html.escape(text1)}</div>
+    
+    <h2>Compared Text</h2>
+    <div class="compared-text">{html.escape(text2)}</div>
+    
+    <h2>Detailed Differences</h2>
+    {''.join([f'''
+    <div class="difference {diff['type']}">
+        <strong>Type:</strong> {diff['type'].capitalize()}
+        <br><strong>Original:</strong> {html.escape(diff['original'])}
+        <br><strong>Compared:</strong> {html.escape(diff['compared'])}
+    </div>
+    ''' for diff in comparison_result['differences']])}
+</body>
+</html>

@@ -160,20 +160,42 @@
         'Mr.', 'Mrs.', 'Ms.', 'Dr.', 'Prof.',
         'Sr.', 'Jr.', 'etc.', 'e.g.', 'i.e.', '."'
     ];
-    let socket; // Declare socket variable. Built-in object of js
+    const socket = new WebSocket('ws://localhost:8765'); //built-in object. url of our socket (its local in this case)
 
-    // Function to handle blob creation and WebSocket connection
-    async function createBlobAndConnect() {
-        // Assuming you have the logic to create the blob here
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' }); // Create the blob
+    // WebSocket event handlers
+    socket.addEventListener('open', () => {
+        console.log('WebSocket connection established'); //a use could be connect it to enable/not the record button
+    });
 
-        // Now establish the WebSocket connection
-        socket = new WebSocket('ws://localhost:8765'); // Create the WebSocket connection
+    socket.addEventListener('message', (event) => {
+        console.log('Message from server:', event.data); //actual message/data received from the WebSocket server
+        const msg = JSON.parse(event.data);
 
-        // WebSocket event handlers
-        socket.addEventListener('open', () => {
-            //console.log('WebSocket connection established');
-            // You can send the blob or any other data here if needed
+        if (msg.hasOwnProperty('pred_sentence')) {
+            returnSentenceDiv.innerHTML = msg.pred_sentence;
+        }
+        //returnSentenceDiv.textContent = event.data; // Display message from server. ex: "an audio has been received"
+    });
+
+    socket.addEventListener('close', () => {
+        console.log('WebSocket connection closed');
+    });
+
+    socket.addEventListener('error', (error) => {
+        console.error('WebSocket error:', error);
+    });
+
+    recordBtn.addEventListener('click', async () => { //standarised procedure 
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); //built-in function of mozilla to get the media of the user
+        mediaRecorder = new MediaRecorder(stream); //object pre-built
+
+        mediaRecorder.ondataavailable = event => { //event = the object has changed in some way. every ms that you talk and it gets saved in the array
+            audioChunks.push(event.data);  //saving the audio into an array
+        };
+
+        mediaRecorder.onstop = () => {
+
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' }); //standarised object to store the mide. wav is binary
             const reader = new FileReader(); //fileReader instance to manipulate the blob
             reader.onloadend = function() {  //it's like an "instruction for the future". When you have data (blob) and you finish loading, this is what you would have to do 
                 // The result will be a data URL, so we split to get the Base64 part
@@ -185,41 +207,17 @@
                     blob:base64Blob,
                     sentence:lines[lineNum]
                 };
-                socket.send(JSON.stringify(dataToSend)); // Send data (turning json object into string) after connection is established
+                const jsonString = JSON.stringify(dataToSend); //turn the json into a string
+            
+                //socket.send(audioBlob);  //when we just sent the audio recorded, not the json obj
+                socket.send(jsonString);
             };
-            reader.readAsDataURL(audioBlob); // Read the blob as a data URL
-            audioChunks=[];
-        });
 
-        socket.addEventListener('message', (event) => {
-            //actual message/data received from the WebSocket server (stringfy json)
-            const msg = JSON.parse(event.data);
+            // Read the audioBlob as a data URL
+            reader.readAsDataURL(audioBlob); //when its done, the onloaded event will fire
 
-            if (msg.hasOwnProperty('pred_sentence')) {
-                returnSentenceDiv.innerHTML = msg.pred_sentence;
-            }
-            //returnSentenceDiv.textContent = event.data; // Display message from server. ex: "an audio has been received"
-        });
-
-        socket.addEventListener('close', () => {
-            console.log('WebSocket connection closed');
-        });
-
-        socket.addEventListener('error', (error) => {
-            console.error('WebSocket error:', error);
-        });
-    }
-
-    recordBtn.addEventListener('click', async () => { //standarised procedure 
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); //built-in function of mozilla to get the media of the user
-        mediaRecorder = new MediaRecorder(stream); //object pre-built
-
-        mediaRecorder.ondataavailable = event => { //event = the object has changed in some way. every ms that you talk and it gets saved in the array
-            audioChunks.push(event.data);  //saving the audio into an array
-        };
-
-        mediaRecorder.onstop = () => {
-            createBlobAndConnect(); // Call the function to create the blob and connect
+            audioChunks = [];  //emptying the audio
+            
         };
 
         mediaRecorder.start();
@@ -241,7 +239,7 @@
         });
 
         nextBtn.addEventListener('click',() => {
-            //console.log(`clicked on nextBtn. line number: ${lineNum}`);
+            console.log(`clicked on nextBtn. line number: ${lineNum}`);
             if (lineNum == lines.length-1) {
             
             } else {
@@ -259,6 +257,10 @@
         
         modalDiv.style.display = "block"; //
         //selectDiv.innerHTML=selectedText;
+        console.log(selectDiv);
+        console.log("finding the lines")
+        console.log(lines);
+        console.log(lineNum);
         selectDiv.innerHTML=lines[lineNum];
 
     });
@@ -329,12 +331,14 @@
             // Function to extract visible text
             const extractVisibleText = () => {
                 const location = rendition.currentLocation();
+                console.log(location);
                 if (location && location.start && location.end) {
                     const [a, b] = [location.start.cfi, location.end.cfi];
                     const rangeCfi = makeRangeCfi(a, b);
                     
                     currentBook.getRange(rangeCfi) //the return of this function is a var called range which has our text
                         .then(range => { //function that is returning range
+                            console.log('Current page text:', range.toString());
                             selectedText=range.toString();
                             const  regexMatch =  /[A-Z]\./g
                             selectedText = selectedText.replace(regexMatch, (match) => match.replace('.', ''));
@@ -344,6 +348,8 @@
                             }
 
                             lines = selectedText.split('.') ; //its returned already because its a global var
+                            console.log(lines);
+                            
                         })
                         .catch(error => {
                             console.error('Error getting range:', error);

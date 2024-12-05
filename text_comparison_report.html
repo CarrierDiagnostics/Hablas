@@ -1,0 +1,52 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>Text Comparison Report</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    max-width: 800px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    background-color: #f4f4f4;
+                }
+                .report-header {
+                    background-color: #333;
+                    color: white;
+                    padding: 10px;
+                    text-align: center;
+                }
+                .similarity-score {
+                    color: red;
+                    font-weight: bold;
+                }
+                .original-text, .compared-text {
+                    background-color: white;
+                    border: 1px solid #ddd;
+                    padding: 10px;
+                    margin-bottom: 10px;
+                }
+                #wrong {
+                    color: red;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="report-header">
+                <h1>Text Comparison Report</h1>
+            </div>
+            
+            <h2>Comparison Metrics</h2>
+            <p>Similarity Score: <span class="similarity-score">75.0%</span></p>
+            
+            <h2>Original Text</h2>
+            <div class="original-text">je vais voir ma mère grand, et lui porter une galette avec un pot de beurre, que ma mère lui envoie</div>
+            
+            <h2>Compared Text (Incorrect Words in Red)</h2>
+            <div class="compared-text">je vais voir ma <span id="wrong" style="color:red;">mergrand</span> et lui porter une galette avec <span id="wrong" style="color:red;">empo</span> de <span id="wrong" style="color:red;">beure</span> que ma mère lui <span id="wrong" style="color:red;">envoyer.</span></div>
+        </body>
+        </html>
+        
