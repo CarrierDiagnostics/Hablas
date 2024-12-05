@@ -82,7 +82,7 @@ async def handle_connection(websocket):
                 actual_base64 = base64_string.split(',')[1]  # Get the Base64 part
                 binary_data = base64.b64decode(actual_base64)
                 audio_file.write(binary_data)
-        the_words = stt(fpath) 
+        the_words = stt(fpath,data_object["language"])
         #predicted_sentence = highlight_differences(the_words,data_object["sentence"])
         predicted_sentence, similarity_ratio = TextComparator.generate_html_report(data_object["sentence"], the_words)
         message_returned = {"pred_sentence":predicted_sentence}

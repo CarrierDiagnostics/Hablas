@@ -5,16 +5,29 @@ import librosa #library to analyse and process audio . soundfile is similar
 import os #library for anything that has to do with your hard-drive
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
 
+
 LANG_ID = "fr"
 MODEL_ID = "jonatasgrosman/wav2vec2-large-xlsr-53-french"
 AUDIO_DIR = "frenchtrial.wav"
 
-def stt(AUDIO_DIR):
+language_dict= {
+    
+    "en":"jonatasgrosman/wav2vec2-large-xlsr-53-english",
+    "fr":"jonatasgrosman/wav2vec2-large-xlsr-53-french",
+    "es":"jonatasgrosman/wav2vec2-large-xlsr-53-spanish",
+    "it":"jonatasgrosman/wav2vec2-large-xlsr-53-french",
+    "de":"jonatasgrosman/wav2vec2-large-xlsr-53-german", 
+
+}
+
+def stt(AUDIO_DIR, lang):
 
     #pre-processing the data
     # Define the path to your audio files and transcriptions. Loading data set
+    MODEL_ID = language_dict[lang]
     audio= librosa.load(AUDIO_DIR, sr=16_000) #opening the file into a numpy array (librosa uses numpy arrays)
     print(type(audio[0])) 
+
 
 
     #tokenizers, models,etc.
