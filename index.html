@@ -1,30 +1,100 @@
 <!DOCTYPE html>
 <html lang=""en">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Roboto:wght@400;700&family=Quicksand:wght@400;700&family=Montserrat:wght@400;700&display=swap" rel="stylesheet"> <!-- Include Lato, Roboto, and Montserrat fonts -->
+
+
 <style>
     body {
-        margin: 20px;
+        background-color:  #a9d1d7;
+        margin: 1%;
+        overflow: hidden;
+        width: 99vw; 
+        height: 99vh;
+        justify-content:center;
+        align-items: center; 
+
         }
     #input_sentence {
         
-        margin-top:20px;
+        margin-top:2%;
         
     }
     div {
-        padding: 2%;
+        padding: 0.5%;
+        
+    }
+    #title {
+        font-size: 1.9em;
+        font-family: 'Quicksand', sans-serif;
+        font-weight: 600;
+        color:white; 
+        padding: 1%;
+        text-align: left;
+        display: flex;
+    }
+
+    #div2viewer {
+        
+        font-family: 'Roboto', sans-serif;
+        font-weight: 300;
+        background-color: #f9f9f9; /* Light background color */
+        border: 1px solid #ccc; /* Light grey border */
+        border-radius: 10px; /* Rounded corners */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+        max-width: 800px; /* Maximum width */
+        width: 100%; /* Full width */
+        height: 70%; /* Automatic height */
+        background-blend-mode: overlay; /* Blend texture with background color */
+        padding: auto;
+        
+    }
+
+    #div2viewer:hover {
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2); /* Darker shadow on hover */
+    }
+
+    #div3 {
+        
+        font-family: 'Monserrat', sans-serif;
+        font-weight: 300;
+        padding: auto;
+
+    }
+    #file-input {
+        display: none;
     }
     #wrong {
         color: red;
     }
     #viewer {
-        width: 100%;
-        height: 600px;
+        width: auto;
+        height: 100%;
         border: 1px solid #ccc;
         overflow: auto;
     }
 
+    #navigation {
+        display: none;
+    }
+
+    .movingBtns {
+        background-color: #A9A9A9;
+        color: white; /* White text */
+        border: none; /* Remove border */
+        border-radius: 5px; /* Rounded corners */
+        padding: 10px 20px; /* Padding */
+        text-align: center; /* Center text */
+        text-decoration: none; /* Remove underline */
+        display: inline-block; /* Inline-block for spacing */
+        font-size: 16px; /* Font size */
+        margin: 10px 2px; /* Margin around buttons */
+        cursor: pointer; /* Pointer cursor on hover */
+        transition: background-color 0.3s,
+    }
     #record {
         margin-top: 10px;
         padding: 5px; /*changes size of the button*/
@@ -38,6 +108,40 @@
         display: block;
         flex:1;
     }
+
+    #file {
+        display: flex;
+        background-color: #4588a0; 
+        font-family: 'Roboto', sans-serif;
+        color: white; /* White text */
+        border: none; /* Remove border */
+        border-radius: 5px; /* Rounded corners */
+        padding: 10px 20px; /* Padding */
+        font-size: 16px; /* Font size */
+        cursor: pointer; /* Pointer cursor on hover */
+        transition: background-color 0.3s; /* Smooth transition */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Shadow for depth */
+        width: 25%;
+        
+
+    }
+    img {
+            max-width: 25%; /* Ensure the image is responsive */
+            height: auto; /* Maintain aspect ratio */
+            display: block; /* Ensure the image is treated as a block element */
+            margin: 0 auto; /* Center the image */
+    }
+
+    #settings {
+        float:right;
+        height:10vh;
+        margin-right: 0; 
+        padding: 1%;
+    }
+    
+    #top-popout{
+        display: flex;
+    }
     .modal {
         display: none;
         position: fixed;
@@ -45,7 +149,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0,0,0,0.4);
+        background-color: rgba(0,0,0,0.4); 
     }
     .modal-content {
         position: relative; /* Makes this element a positioning context for its children
@@ -60,10 +164,12 @@
         padding: 20px;
         border: 1px solid #888;
         width: 80%;
+        position: relative;
+        font-family: 'Roboto', sans-serif;
     }
     .close {
-        float: right;
-        cursor: pointer;
+        margin-left: auto;
+        order:2;
     }
     .arrow-container {
         /*is position: absolute; */
@@ -87,33 +193,81 @@
         padding: 20px;
         margin-bottom: 60px;
     }
+
+    .darkerGrey {
+        background-color: #A76D9A;
+    }
+    #fileInput{
+        display: none;
+        visibility: hidden;
+    }
+
+    #language-select {
+        display: flex;
+        background-color:rgb(225, 242, 253);
+        color:  #4588a0;;
+        border: none;
+        border-radius: 1%;
+        padding: auto;
+        font-size: 1em;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Style for the options in the dropdown */
+    #language-select option {
+        background-color: white;
+        color: #4588a0;
+        padding: 10px;
+        font-family: 'Roboto', sans-serif;
+    }
+
+    /* Optional hover effect */
+    #language-select:hover {
+        background-color: #3a7286;
+    }
 </style>
 <body>
-    <h1>Hablas Trial</h1>
     
-     <!-- EpubTocExtractor file -->
-     <label for="language-select">Choose a language:</label>
-     <select id="language-select">
-         <option value="en">English</option>
-         <option value="fr">French</option>
-         <option value="sp">Spanish</option>
-         <option value="it">Italian</option>
-         <option value="de">German</option>
-     </select>
-     <div>
-        <input type="file" id="fileInput" accept=".epub"/>
-     </div>
+    <div id="title">
+        <p>Hablas</p>
+        <img src="settings.png" id="settings"/> 
+    </div>
+    
+
+    <div id="div2viewer">
+        <div id="viewer"></div> 
+    </div>
+
+    <div id="div3">
+        
+         <div id="file">
+            <img src="upload-icon-white.png" alt="upload symbol" />
+            <img src="epub-icon-white.png" alt="upload symbol" />
+
+        </div>
+        
+    </div>
+    <input type="file" id="fileInput" accept=".epub"/>
      
-    <div id="viewer"></div>
 
     <div id="myModal" class="modal"> 
         <div class="modal-content"> 
+            <div id="top-popout">
+            <select id="language-select">
+                <option value="en">English</option>
+                <option value="fr">French</option>
+                <option value="sp">Spanish</option>
+                <option value="it">Italian</option>
+                <option value="de">German</option>
+            </select>
             <span class="close">&times;</span> 
+            </div>
             <div class="text-container">
-                <p>Selected text will appear here</p>
                 <div id="selectedText"></div>
             </div>
-            <div id="return_sentence"> this is what you said </div>
+            <div id="return_sentence"></div>
             <button id="record">record Button</button>
             <button id="stop">stop Button</button>
             <div class="arrow-container">
@@ -129,14 +283,16 @@
 
     
 <div id="navigation">
-    <button id="prev">Previous</button>
-    <button id="next">Next</button>
-    <button id="select">Select this paragraph</button>
+    
+    <button id="prev" class="movingBtns">Previous</button>
+    <button id="next" class="movingBtns">Next</button>
+    <button id="select" class="movingBtns darkerGrey" >Select this paragraph</button>
     
 </div>
 
 <script>
     const fileInput = document.getElementById('fileInput');
+    fileInput.style.display= "none";
     let currentBook = null;
     let rendition = null;
     let selectedText = null;
@@ -155,7 +311,8 @@
     const nextBtn = document.getElementsByClassName('arrowNext')[0];
     const returnSentenceDiv = document.getElementById('return_sentence');
     const languageSel =document.getElementById('language-select');
-    
+    const navigationDiv = document.getElementById('navigation');
+    const fileDiv = document.getElementById("file");
     
     const recordBtn = document.getElementById('record'); 
     const stopBtn = document.getElementById('stop');
@@ -244,7 +401,7 @@
             }
         });
 
-        nextBtn.addEventListener('click',() => {
+    nextBtn.addEventListener('click',() => {
             //console.log(`clicked on nextBtn. line number: ${lineNum}`);
             if (lineNum == lines.length-1) {
             
@@ -285,10 +442,8 @@
         if (file) {
             currentBook = ePub(file);
             viewer.innerHTML = "";
-            rendition = currentBook.renderTo("viewer", {
-                width: "100%",
-                height: "600px",
-                spread: "none",
+            rendition = currentBook.renderTo("viewer",{
+                height:"100%",
                 allowScriptedContent: true,
                 script: true,
                 sandbox: "allow-same-origin allow-scripts allow-popups",
@@ -369,11 +524,14 @@
             });
 
             rendition.display();
+            navigationDiv.style.display = 'block';
+            fileDiv.style.display="none";
         }
     });
 
-    recordBtn.addEventListener('click',() => {
+    fileDiv.addEventListener('click',()=> {
+        fileInput.click();
+    })
 
-    });
 </script>
 
